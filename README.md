@@ -16,9 +16,7 @@ Ziel: Simulation einer elektrischen Sicherung.
 
 Modelica Bibliothekes Komponenten:
 - Trapezfunktion
-- Idealer Schalter
-- RS Flip-Flop
-- PT1-Glied
+
 
 Eigene Koponenten:
 - Spannungsquelle
@@ -29,3 +27,6 @@ Eigene Koponenten:
 - Real Konstante
 - Wahrheitswert Konstante
 - größergleich Vergleich
+- Idealer Schalter
+- RS Flip-Flop
+- PT1-Glied
