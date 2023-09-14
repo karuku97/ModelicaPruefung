@@ -37,17 +37,30 @@ package PruefungsVorleistung
         p.v = n.v;
         p.i = i;
         annotation(
-          Icon(graphics = {Ellipse(origin = {2, -3}, extent = {{-86, 89}, {86, -89}}), Line(origin = {-83.59, -1.17}, points = {{-4.17082, 1.17082}, {-0.17082, 1.17082}, {-10.1708, 1.17082}}, color = {0, 0, 255}, thickness = 1), Line(origin = {92.0763, -1.40516}, points = {{-4.17082, 1.17082}, {-0.17082, 1.17082}, {-4.1708, 1.17082}}, color = {0, 0, 255}, thickness = 1), Line(origin = {0, -96}, points = {{0, 4}, {0, -4}}, thickness = 1), Line(origin = {23.79, 22.79}, points = {{-23.793, -24.793}, {24.207, 25.207}, {24.207, 15.207}, {16.207, 25.207}, {24.207, 25.207}, {24.207, 15.207}}, thickness = 0.75), Text(origin = {0, 102}, extent = {{-100, 16}, {100, -16}}, textString = "%name")}));
+          Icon(graphics = {Ellipse(origin = {2, -3}, extent = {{-86, 89}, {86, -89}}), Line(origin = {-83.59, -1.17}, points = {{-4.17082, 1.17082}, {-0.17082, 1.17082}, {-10.1708, 1.17082}}, color = {0, 0, 255}, thickness = 1), Line(origin = {92.0763, -1.40516}, points = {{-4.17082, 1.17082}, {-0.17082, 1.17082}, {-4.1708, 1.17082}}, color = {0, 0, 255}, thickness = 1), Line(origin = {0, -96}, points = {{0, 4}, {0, -4}}, thickness = 1), Line(origin = {23.79, 22.79}, points = {{-23.793, -24.793}, {24.207, 25.207}, {24.207, 15.207}, {16.207, 25.207}, {24.207, 25.207}, {24.207, 15.207}}, thickness = 0.75), Text(origin = {0, 116}, extent = {{-100, 16}, {100, -16}}, textString = "%name")}));
       end StromStaerkenMesser;
 
-      model Schalter "Model eines Schalters // Achtung FEHLERHAFT"
+      model Schalter "Model eines idealen Schalters ohne Lichtbogen effekt"
         extends PruefungsVorleistung.Interfaces.TwoPin;
         PruefungsVorleistung.Interfaces.WahrheitswertInput off annotation(
           Placement(visible = true, transformation(origin = {0, 104}, extent = {{24, -24}, {-24, 24}}, rotation = 90), iconTransformation(origin = {0, 96}, extent = {{-20, -20}, {20, 20}}, rotation = -90)));
+        
+        parameter Modelica.Units.SI.Resistance Ron(final min=0) = 1e-5
+          "Widerstand bei geschlossenem Schalter";
+        parameter Modelica.Units.SI.Conductance Goff(final min=0) = 1e-5
+          "Leitfähigkeit bei offenem Schalter";
+        
+        
+        Real s(final unit="1") "Hilfsvariable";
+        constant Modelica.Units.SI.Voltage unitVoltage=1 annotation (HideResult=true);
+        constant Modelica.Units.SI.Current unitCurrent=1 annotation (HideResult=true);
+      
       equation
-        0.001 = if off then p.i else p.v;
+        v = (s*unitCurrent)*(if off then 1 else Ron);
+        p.i = (s*unitVoltage)*(if off then Goff else 1);
+        
         annotation(
-          Icon(graphics = {Line(origin = {-26.32, 14.82}, points = {{-65.6836, -14.8164}, {-9.68358, -14.8164}, {66.3164, 15.1836}, {-9.68358, -14.8164}}, color = {255, 0, 255}, thickness = 1), Line(origin = {59, 0}, points = {{33, 0}, {-33, 0}}, color = {255, 0, 255}, thickness = 1), Text(origin = {0, -84}, extent = {{-100, 16}, {100, -16}}, textString = "%name")}));
+          Icon(graphics = {Line(origin = {-26.32, 14.82}, points = {{-65.6836, -14.8164}, {-9.68358, -14.8164}, {66.3164, 15.1836}, {-9.68358, -14.8164}}, color = {0, 0, 255}, thickness = 1), Line(origin = {59, 0}, points = {{33, 0}, {-33, 0}}, color = {0, 0, 255}, thickness = 1), Text(origin = {0, -84}, extent = {{-100, 16}, {100, -16}}, textString = "%name")}));
       end Schalter;
 
       model VariablerWiderstand "Modell eines Variablen Widerstands"
@@ -63,12 +76,8 @@ package PruefungsVorleistung
   end Electrics;
 
   model Sicherung
-    Modelica.Blocks.Logical.RSFlipFlop rSFlipFlop annotation(
-      Placement(visible = true, transformation(origin = {38, -4}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
     Modelica.Blocks.Sources.Trapezoid trapezoid(amplitude = -999, falling = 400, offset = 999 + 1, period = 1000, rising = 400, width = 100) annotation(
       Placement(visible = true, transformation(origin = {118, -62}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
-    Modelica.Blocks.Continuous.FirstOrder firstOrder(T = 0.01, k = 1) annotation(
-      Placement(visible = true, transformation(origin = {-30, 28}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
     PruefungsVorleistung.Electrics.BasisElements.SpannungsquelleDC spannungsquelleDC(A = 100) annotation(
       Placement(visible = true, transformation(origin = {-74, -62}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
     PruefungsVorleistung.Electrics.BasisElements.Erdung erdung annotation(
@@ -77,16 +86,20 @@ package PruefungsVorleistung
       Placement(visible = true, transformation(origin = {-30, -40}, extent = {{-10, 10}, {10, -10}}, rotation = 0)));
     PruefungsVorleistung.Electrics.BasisElements.VariablerWiderstand variablerWiderstand annotation(
       Placement(visible = true, transformation(origin = {62, -62}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-    Modelica.Electrical.Analog.Ideal.IdealOpeningSwitch switch annotation(
-      Placement(visible = true, transformation(origin = {26, -40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   PruefungsVorleistung.maths.Betrag betrag annotation(
       Placement(visible = true, transformation(origin = {-30, -4}, extent = {{-10, 10}, {10, -10}}, rotation = 0)));
   PruefungsVorleistung.maths.Konstante konstante(k = 10)  annotation(
-      Placement(visible = true, transformation(origin = {52, 84}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  maths.konstanterWahrheitswert konstanterWahrheitswert(value = false)  annotation(
-      Placement(visible = true, transformation(origin = {4, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Placement(visible = true, transformation(origin = {90, 40}, extent = {{10, -10}, {-10, 10}}, rotation = 0)));
+  PruefungsVorleistung.maths.konstanterWahrheitswert konstanterWahrheitswert(value = false)  annotation(
+      Placement(visible = true, transformation(origin = {2, 18}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   PruefungsVorleistung.maths.groesserAls groesserAls annotation(
       Placement(visible = true, transformation(origin = {50, 44}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+  PruefungsVorleistung.Logical.RsFlipFlop rsFlipFlop(Qini = false)  annotation(
+      Placement(visible = true, transformation(origin = {52, 2}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+  PruefungsVorleistung.Electrics.BasisElements.Schalter schalter(Goff = 1e-6, Ron = 1e-6)  annotation(
+      Placement(visible = true, transformation(origin = {30, -40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  PruefungsVorleistung.maths.PT1 pt1(T = 0.001)  annotation(
+      Placement(visible = true, transformation(origin = {-4, 62}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   equation
     connect(erdung.p, spannungsquelleDC.n) annotation(
       Line(points = {{-6, -74}, {-74, -74}, {-74, -72}}, color = {0, 0, 255}));
@@ -96,24 +109,24 @@ package PruefungsVorleistung
       Line(points = {{62, -72}, {62, -74}, {-6, -74}}, color = {0, 0, 255}));
     connect(trapezoid.y, variablerWiderstand.R) annotation(
       Line(points = {{108, -62}, {72, -62}}, color = {0, 0, 127}));
-    connect(variablerWiderstand.p, switch.n) annotation(
-      Line(points = {{62, -52}, {60, -52}, {60, -40}, {36, -40}}, color = {0, 0, 255}));
-    connect(switch.p, stromStaerkenMesser.n) annotation(
-      Line(points = {{16, -40}, {-20, -40}}, color = {0, 0, 255}));
-    connect(switch.control, rSFlipFlop.Q) annotation(
-      Line(points = {{26, -28}, {44, -28}, {44, -14}}, color = {255, 0, 255}));
     connect(stromStaerkenMesser.i, betrag.realOutput) annotation(
       Line(points = {{-30, -30}, {-30, -14}}));
-    connect(betrag.realInput, firstOrder.u) annotation(
-      Line(points = {{-30, 6}, {-30, 16}}));
-    connect(konstanterWahrheitswert.y, rSFlipFlop.R) annotation(
-      Line(points = {{16, 12}, {32, 12}, {32, 8}}, color = {255, 0, 255}));
-  connect(groesserAls.realInput, firstOrder.y) annotation(
-      Line(points = {{44, 54}, {42, 54}, {42, 56}, {-30, 56}, {-30, 40}}));
-  connect(groesserAls.y, rSFlipFlop.S) annotation(
-      Line(points = {{46, 32}, {44, 32}, {44, 8}}, color = {255, 0, 255}));
+    connect(groesserAls.y, rsFlipFlop.S) annotation(
+      Line(points = {{46, 32}, {46, 24}, {59, 24}, {59, 13}}, color = {255, 0, 255}));
+    connect(schalter.n, variablerWiderstand.p) annotation(
+      Line(points = {{40, -40}, {62, -40}, {62, -52}}, color = {0, 0, 255}));
+    connect(schalter.p, stromStaerkenMesser.n) annotation(
+      Line(points = {{20, -40}, {-20, -40}}, color = {0, 0, 255}));
+    connect(rsFlipFlop.y1, schalter.off) annotation(
+      Line(points = {{59, -9}, {59, -24}, {30, -24}, {30, -30}}, color = {255, 0, 255}));
+    connect(rsFlipFlop.R, konstanterWahrheitswert.y) annotation(
+      Line(points = {{47, 13}, {47, 18}, {12, 18}}, color = {255, 0, 255}));
+  connect(pt1.y, groesserAls.realInput) annotation(
+      Line(points = {{6, 62}, {44, 62}, {44, 54}}));
+  connect(betrag.realInput, pt1.u) annotation(
+      Line(points = {{-30, 6}, {-30, 62}, {-14, 62}}));
   connect(konstante.realOutput, groesserAls.realInput1) annotation(
-      Line(points = {{52, 74}, {52, 60}, {68, 60}, {68, 40}, {60, 40}}));
+      Line(points = {{80, 40}, {60, 40}}));
   end Sicherung;
 
   package maths
@@ -126,12 +139,12 @@ model Betrag"Betragsbildung y = abs(x)"
     equation
       realOutput = abs(realInput);
       annotation(
-        Icon(graphics = {Rectangle(origin = {0, -2}, extent = {{-98, 96}, {98, -96}}), Text(origin = {4, -25}, extent = {{-98, 89}, {98, -89}}, textString = "| x |"), Text(origin = {0, 72}, extent = {{-100, 26}, {100, -26}}, textString = "%name")}));
+        Icon(graphics = {Rectangle(lineThickness = 1, extent = {{-100, 100}, {100, -100}}), Text(origin = {-10, 1}, rotation = -90, extent = {{-100, 71}, {100, -71}}, textString = "| x |"), Text(origin = {126, 0}, rotation = -90, extent = {{-100, 26}, {100, -26}}, textString = "%name")}));
     end Betrag;
 
     model Konstante "Konstante"
   PruefungsVorleistung.Interfaces.RealOutput realOutput annotation(
-        Placement(visible = true, transformation(origin = {-12, -90}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {0, -98}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+        Placement(visible = true, transformation(origin = {-12, -90}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {108, -2}, extent = {{-26, -26}, {26, 26}}, rotation = 90)));
     parameter Real k(start=1) "Konstante Ausgabe";
     
     equation
@@ -139,12 +152,12 @@ model Betrag"Betragsbildung y = abs(x)"
     realOutput = k;
     
     annotation(
-        Icon(graphics = {Rectangle(extent = {{-96, 94}, {96, -94}}), Text(origin = {1, 61}, extent = {{-95, 31}, {95, -31}}, textString = "%name"), Text(origin = {4, -29}, extent = {{-78, 57}, {78, -57}}, textString = "k = %k")}));
+        Icon(graphics = {Rectangle(origin = {1, -1}, lineThickness = 1, extent = {{-99, 98}, {99, -98}}), Text(origin = {-3, -131}, extent = {{-95, 31}, {95, -31}}, textString = "%name"), Text(origin = {2, 3}, extent = {{-78, 57}, {78, -57}}, textString = "k = %k")}));
 end Konstante;
 
     model konstanterWahrheitswert" Konstanter Wahrheitswert"
   PruefungsVorleistung.Interfaces.WahrheitswertOutput y annotation(
-        Placement(visible = true, transformation(origin = {94, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+        Placement(visible = true, transformation(origin = {94, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {104, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     parameter Boolean value(start=false);
     
     equation
@@ -152,7 +165,7 @@ end Konstante;
     y = value;
 
     annotation(
-        Icon(graphics = {Rectangle(origin = {0, -1}, lineColor = {255, 0, 255}, lineThickness = 1, extent = {{-98, 97}, {98, -97}}), Text(origin = {-1, 61}, extent = {{99, -39}, {-99, 39}}, textString = "%name"), Text(origin = {0, -40}, extent = {{-98, 34}, {98, -34}}, textString = "%value")}));
+        Icon(graphics = {Rectangle( lineColor = {255, 0, 255}, lineThickness = 1, extent = {{-100, 100}, {100, -100}}), Text(origin = {-1, -138}, extent = {{99, -38}, {-99, 38}}, textString = "%name"), Text(origin = {0, 6}, extent = {{-98, 34}, {98, -34}}, textString = "%value")}));
 end konstanterWahrheitswert;
 
     model groesserAls"Groesser Gleich Vergleich "
@@ -161,15 +174,34 @@ end konstanterWahrheitswert;
   PruefungsVorleistung.Interfaces.RealInput realInput1 annotation(
         Placement(visible = true, transformation(origin = {60, 86}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {50, 102}, extent = {{-30, -30}, {30, 30}}, rotation = 0)));
   PruefungsVorleistung.Interfaces.WahrheitswertOutput y annotation(
-        Placement(visible = true, transformation(origin = {12, -76}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {124, -40}, extent = {{-26, -26}, {26, 26}}, rotation = 0)));
+        Placement(visible = true, transformation(origin = {12, -76}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {108, -60}, extent = {{-22, -22}, {22, 22}}, rotation = 0)));
     
     
     equation
  y = realInput >= realInput1;
      
     annotation(
-        Icon(graphics = {Text(origin = {9, -22}, rotation = 180, extent = {{-76, 101}, {76, -101}}, textString = ">="), Text(origin = {1, 49}, extent = {{97, -31}, {-97, 31}}, textString = "%name"), Rectangle(origin = {-1, -1}, extent = {{-97, 95}, {97, -95}})}));
+        Icon(graphics = {Text(origin = {0, 35}, rotation = 180, extent = {{-99, 64}, {99, -64}}, textString = ">="), Text(origin = {-3, -131}, extent = {{97, -31}, {-97, 31}}, textString = "%name"), Rectangle(lineThickness = 1, extent = {{-100, 100}, {100, -100}})}));
 end groesserAls;
+
+    model PT1 "Modell eines proportionalen Uebertragungsglieds 1. Ordnung"
+  PruefungsVorleistung.Interfaces.RealInput u annotation(
+        Placement(visible = true, transformation(origin = {-106, -10}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-100, -2}, extent = {{10, 10}, {-10, -10}}, rotation = -90)));
+  PruefungsVorleistung.Interfaces.RealOutput y(start = 0, fixed = true) annotation(
+        Placement(visible = true, transformation(origin = {102, -2}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {100, 0}, extent = {{10, -10}, {-10, 10}}, rotation = 90)));
+    
+    
+      parameter Real k(unit="1")=1 "Verstaerkung";
+      parameter Modelica.Units.SI.Time T(start=1) "Zeitkonstante";
+    
+    equation
+
+    
+    der(y) = (k*u - y)/T;
+    
+    annotation(
+        Icon(graphics = {Rectangle(lineThickness = 1, extent = {{-100, 100}, {100, -100}}), Text(origin = {0, -124}, extent = {{-100, 20}, {100, -20}}, textString = "%name"), Line(origin = {-0.13, -13.13}, points = {{-99.8675, -86.8675}, {-97.8675, -80.8675}, {-93.8675, -74.8675}, {-91.8675, -66.8675}, {-89.8675, -62.8675}, {-85.8675, -56.8675}, {-83.8675, -50.8675}, {-81.8675, -44.8675}, {-79.8675, -38.8675}, {-75.8675, -34.8675}, {-73.8675, -28.8675}, {-69.8675, -24.8675}, {-67.8675, -18.8675}, {-61.8675, -12.8675}, {-57.8675, -6.86754}, {-53.8675, -0.867544}, {-49.8675, 5.13246}, {-45.8675, 11.1325}, {-39.8675, 15.1325}, {-33.8675, 23.1325}, {-27.8675, 29.1325}, {-23.8675, 33.1325}, {-17.8675, 41.1325}, {-11.8675, 47.1325}, {-5.86754, 53.1325}, {2.13246, 59.1325}, {14.1325, 65.1325}, {24.1325, 71.1325}, {34.1325, 75.1325}, {42.1325, 77.1325}, {48.1325, 79.1325}, {56.1325, 81.1325}, {62.1325, 83.1325}, {70.1325, 85.1325}, {76.1325, 87.1325}, {84.1325, 87.1325}, {90.1325, 87.1325}, {94.1325, 87.1325}, {98.1325, 87.1325}, {100.132, 87.1325}, {100.132, 87.1325}}, thickness = 1), Text(origin = {0, 121}, extent = {{-100, 17}, {100, -17}}, textString = "T = %T, K = %k")}));
+end PT1;
   end maths;
 
   package Interfaces
@@ -277,6 +309,75 @@ end groesserAls;
   connect(greaterEqual.u2, const.y) annotation(
       Line(points = {{52, 50}, {52, 72}, {-32, 72}}, color = {0, 0, 127}));
   end SicherungModelicaKomonenten;
+  
+  package Logical
+   
+model NOR "Logisches NOR Gatter: y =  Nicht (u oder u1)"
+      Interfaces.WahrheitswertInput u annotation(
+        Placement(visible = true, transformation(origin = {-80, 54}, extent = {{-20, -20}, {20, 20}}, rotation = 0), iconTransformation(origin = {-94, 56}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
+      Interfaces.WahrheitswertInput u1 annotation(
+        Placement(visible = true, transformation(origin = {-60, -18}, extent = {{-20, -20}, {20, 20}}, rotation = 0), iconTransformation(origin = {-94, -44}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
+      Interfaces.WahrheitswertOutput y annotation(
+        Placement(visible = true, transformation(origin = {88, 10}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {110, 0}, extent = {{-24, -24}, {24, 24}}, rotation = 0)));
+    equation
+      y = not (u or u1);
+      annotation(
+        Icon(graphics = {Rectangle(origin = {1, -1}, lineColor = {255, 0, 255}, lineThickness = 1, extent = {{-99, 99}, {99, -99}}), Text(origin = {0, 2}, extent = {{-58, 42}, {58, -42}}, textString = "NOR")}));
+    end NOR;
+
+    model PRE "Unterbricht algebraische Schleifen um eine verschwindend kleine Zeitverzögerung (y = pre(u): Ereignisiteration wird fortgesetzt, bis u = pre(u))"
+  PruefungsVorleistung.Interfaces.WahrheitswertInput u annotation(
+        Placement(visible = true, transformation(origin = {-100, 26}, extent = {{-20, -20}, {20, 20}}, rotation = 0), iconTransformation(origin = {-96, 0}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
+  PruefungsVorleistung.Interfaces.WahrheitswertOutput y annotation(
+        Placement(visible = true, transformation(origin = {86, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {107, 1}, extent = {{-17, -17}, {17, 17}}, rotation = 0)));
+    
+    parameter Boolean pre_u_start=false "Start Wert von pre(u) zur initialisierung";
+    
+    
+    initial equation
+      pre(u) = pre_u_start;
+    equation
+      y = pre(u);
+
+    annotation(
+        Icon(graphics = {Rectangle(lineColor = {255, 0, 255}, lineThickness = 1, extent = {{-100, 100}, {100, -100}}), Text(origin = {3, 0}, extent = {{-65, 40}, {65, -40}}, textString = "PRE")}));
+end PRE;
+
+    model RsFlipFlop "Logisches Flip-Flop"
+    parameter Boolean Qini=false "Start wert von Q bei Initialisierung";
+      PruefungsVorleistung.Interfaces.WahrheitswertInput S annotation(
+            Placement(visible = true, transformation(origin = {-104, 60}, extent = {{-20, -20}, {20, 20}}, rotation = 0), iconTransformation(origin = {-110, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      PruefungsVorleistung.Interfaces.WahrheitswertInput R annotation(
+            Placement(visible = true, transformation(origin = {-104, -54}, extent = {{-20, -20}, {20, 20}}, rotation = 0), iconTransformation(origin = {-110, -50}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      PruefungsVorleistung.Interfaces.WahrheitswertOutput y1 annotation(
+          Placement(visible = true, transformation(origin = {106, 60}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {110, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      PruefungsVorleistung.Interfaces.WahrheitswertOutput y2 annotation(
+          Placement(visible = true, transformation(origin = {108, -54}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {110, -50}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Logical.NOR nor1 annotation(
+            Placement(visible = true, transformation(origin = {-30, 48}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Logical.PRE pre(pre_u_start=not (Qini))  annotation(
+            Placement(visible = true, transformation(origin = {14, 48}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Logical.NOR nor2 annotation(
+        Placement(visible = true, transformation(origin = {0, -36}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    equation
+      connect(nor1.y, pre.u) annotation(
+        Line(points = {{-18, 48}, {4, 48}}, color = {255, 0, 255}));
+      connect(nor1.u, S) annotation(
+            Line(points = {{-40, 54}, {-66, 54}, {-66, 60}, {-104, 60}}, color = {255, 0, 255}));
+      connect(nor2.u1, R) annotation(
+            Line(points = {{-10, -40}, {-44, -40}, {-44, -54}, {-104, -54}}, color = {255, 0, 255}));
+      connect(nor2.u, pre.y) annotation(
+            Line(points = {{-10, -30}, {-26, -30}, {-26, 0}, {50, 0}, {50, 48}, {24, 48}}, color = {255, 0, 255}));
+      connect(nor2.y, nor1.u1) annotation(
+            Line(points = {{12, -36}, {30, -36}, {30, 18}, {-60, 18}, {-60, 44}, {-40, 44}}, color = {255, 0, 255}));
+      connect(pre.y, y2) annotation(
+            Line(points = {{24, 48}, {64, 48}, {64, -54}, {108, -54}}, color = {255, 0, 255}));
+      connect(nor2.y, y1) annotation(
+        Line(points = {{12, -36}, {72, -36}, {72, 60}, {106, 60}}, color = {255, 0, 255}));
+    annotation(
+        Icon(graphics = {Text(origin = {-68, -52}, extent = {{-36, 32}, {36, -32}}, textString = "S"), Text(origin = {-68, 67}, extent = {{-32, 31}, {32, -31}}, textString = "R"), Text(origin = {73, 69}, extent = {{-33, 25}, {33, -25}}, textString = "Q"), Text(origin = {69, -46}, extent = {{-29, 28}, {29, -28}}, textString = "Q!"), Text(origin = {0, 128}, extent = {{-100, 26}, {100, -26}}, textString = "%name"), Rectangle(lineColor = {255, 0, 255}, lineThickness = 1, extent = {{-100, 100}, {100, -100}})}));
+end RsFlipFlop;
+  end Logical;
   annotation(
     uses(Modelica(version = "4.0.0")));
 end PruefungsVorleistung;
